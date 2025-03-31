@@ -10,7 +10,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Criar cookie e variável de sessão
         setcookie('email', $email, time() + 3600); // O cookie dura 1 hora
         $_SESSION['email'] = $email;
-        header("Location: apostas.php"); // Redireciona para a página de apostas
+        header("Location: index.php"); // Redireciona para a página de apostas
         exit;
     } else {
         $erro = "E-mail ou senha incorretos!";

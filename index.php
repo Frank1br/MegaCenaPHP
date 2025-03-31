@@ -3,41 +3,59 @@ session_start();
 
 // Verificar se o usuário está logado
 if (!isset($_SESSION['email']) && !isset($_COOKIE['email'])) {
-    header("Location: login.php"); // Redireciona para login se não estiver logado
+    header("Location: login.php");
     exit;
 }
 
-// Recuperar o e-mail
 $email = $_SESSION['email'] ?? $_COOKIE['email'];
 
-// Função para gerar números aleatórios da Mega-Sena
 function gerarNumerosMegaSena() {
     $numeros = range(1, 60);
     shuffle($numeros);
     return array_slice($numeros, 0, 6);
 }
 
-// Função para contar os acertos
 function contarAcertos($aposta, $sorteio) {
     return count(array_intersect($aposta, $sorteio));
 }
 
-// Função para salvar a aposta
 function salvarAposta($aposta, $sorteio, $acertos) {
     $data = date('Y-m-d H:i:s');
-    $resultado = "Aposta: " . implode(", ", $aposta) . "\n";
-    $resultado .= "Sorteio: " . implode(", ", $sorteio) . "\n";
-    $resultado .= "Acertos: " . $acertos . "\n";
-    $resultado .= "Data: " . $data . "\n";
-    $resultado .= "----------------------------\n\n"; // Linha em branco para separar as apostas
-    file_put_contents('historico_apostas.txt', $resultado, FILE_APPEND);
+    $registro = [
+        'id' => uniqid(),
+        'aposta' => $aposta,
+        'sorteio' => $sorteio,
+        'acertos' => $acertos,
+        'data' => $data
+    ];
+    file_put_contents('historico_apostas.txt', json_encode($registro) . "\n", FILE_APPEND);
 }
 
-// Logout
+if (!file_exists('historico_apostas.txt')) {
+    file_put_contents('historico_apostas.txt', "");
+}
+
 if (isset($_GET['logout'])) {
-    setcookie('email', '', time() - 3600); // Exclui o cookie
-    session_destroy(); // Destroi a sessão
+    setcookie('email', '', time() - 3600);
+    session_destroy();
     header("Location: login.php");
+    exit;
+}
+
+if (isset($_GET['excluir'])) {
+    $id_excluir = $_GET['excluir'];
+    $historico = file('historico_apostas.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    $novo_historico = [];
+
+    foreach ($historico as $linha) {
+        $aposta = json_decode($linha, true);
+        if (is_array($aposta) && isset($aposta['id']) && $aposta['id'] !== $id_excluir) {
+            $novo_historico[] = $linha;
+        }
+    }
+
+    file_put_contents('historico_apostas.txt', implode("\n", $novo_historico) . "\n");
+    header("Location: index.php");
     exit;
 }
 
@@ -75,8 +93,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['numeros'])) {
     }
 }
 
-// Ler o histórico de apostas
-$historico = file('historico_apostas.txt');
+$historico = file('historico_apostas.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+$historico = array_filter(array_map(function($linha) {
+    $aposta = json_decode($linha, true);
+    return is_array($aposta) && isset($aposta['aposta'], $aposta['sorteio']) ? $aposta : null;
+}, $historico));
 ?>
 
 <!DOCTYPE html>
@@ -91,7 +112,7 @@ $historico = file('historico_apostas.txt');
     <div class="container my-5">
         <div class="card shadow p-3">
             <div class="card-body text-center">
-                <h3>Olá, <?php echo $email; ?>!</h3>
+                <h3>Olá, <?php echo htmlspecialchars($email); ?>!</h3>
                 <a href="?logout=true" class="btn btn-danger mb-3">Sair</a>
                 <a href="loja.php" class="btn btn-primary mb-3">Ir para a Loja</a>
                 
@@ -116,11 +137,15 @@ $historico = file('historico_apostas.txt');
                     <h3>Histórico de Apostas</h3>
                     <?php if (!empty($historico)): ?>
                         <ul class="list-group">
-                            <?php 
-                            $apostas = explode("\n\n", trim(implode('', $historico)));
-                            foreach ($apostas as $aposta): ?>
-                                <li class="list-group-item">
-                                    <pre><?php echo nl2br($aposta); ?></pre>
+                            <?php foreach ($historico as $aposta): ?>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <pre class="mb-0"><?php 
+                                        echo "Aposta: " . implode(", ", (array) $aposta['aposta']) . "\n";
+                                        echo "Sorteio: " . implode(", ", (array) $aposta['sorteio']) . "\n";
+                                        echo "Acertos: " . $aposta['acertos'] . "\n";
+                                        echo "Data: " . $aposta['data'];
+                                    ?></pre>
+                                    <a href="?excluir=<?php echo htmlspecialchars($aposta['id']); ?>" class="btn btn-danger btn-sm">Excluir</a>
                                 </li>
                             <?php endforeach; ?>
                         </ul>
