@@ -21,15 +21,15 @@ function contarAcertos($aposta, $sorteio) {
 
 function salvarAposta($aposta, $sorteio, $acertos) {
     $data = date('Y-m-d H:i:s');
-    $registro = [
-        'id' => uniqid(),
-        'aposta' => $aposta,
-        'sorteio' => $sorteio,
-        'acertos' => $acertos,
-        'data' => $data
-    ];
-    file_put_contents('historico_apostas.txt', json_encode($registro) . "\n", FILE_APPEND);
+    $registro = "ID: " . uniqid() . "\n";
+    $registro .= "Aposta: " . implode(", ", $aposta) . "\n";
+    $registro .= "Sorteio: " . implode(", ", $sorteio) . "\n";
+    $registro .= "Acertos: " . $acertos . "\n";
+    $registro .= "Data: " . $data . "\n\n";
+
+    file_put_contents('historico_apostas.txt', $registro, FILE_APPEND);
 }
+
 
 if (!file_exists('historico_apostas.txt')) {
     file_put_contents('historico_apostas.txt', "");
@@ -98,6 +98,23 @@ $historico = array_filter(array_map(function($linha) {
     $aposta = json_decode($linha, true);
     return is_array($aposta) && isset($aposta['aposta'], $aposta['sorteio']) ? $aposta : null;
 }, $historico));
+
+
+// Script para download do arquivo
+if (isset($_GET['baixar_historico'])) {
+    $file = 'historico_apostas.txt';
+
+    // Forçar o download do arquivo
+    if (file_exists($file)) {
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename="' . basename($file) . '"');
+        header('Content-Length: ' . filesize($file));
+        readfile($file);
+        exit;
+    } else {
+        echo "Arquivo não encontrado.";
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -153,6 +170,9 @@ $historico = array_filter(array_map(function($linha) {
                         <p>Você ainda não fez nenhuma aposta.</p>
                     <?php endif; ?>
                 </div>
+
+                <!-- Botão para baixar o arquivo -->
+                <a href="?baixar_historico=true" class="btn btn-secondary mt-3">Baixar Histórico de Apostas</a>
             </div>
         </div>
     </div>
