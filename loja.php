@@ -7,6 +7,8 @@ if (!isset($_SESSION['email']) && !isset($_COOKIE['email'])) {
     exit;
 }
 
+
+
 // Carregar produtos da Fake Store API
 $produtos = json_decode(file_get_contents("https://fakestoreapi.com/products"), true);
 ?>
