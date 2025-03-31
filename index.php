@@ -126,12 +126,15 @@ if (isset($_GET['baixar_historico'])) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
+    
     <div class="container my-5">
-        <div class="card shadow p-3">
-            <div class="card-body text-center">
-                <h3>Olá, <?php echo htmlspecialchars($email); ?>!</h3>
+    <h3>Olá, <?php echo htmlspecialchars($email); ?>!</h3>
                 <a href="?logout=true" class="btn btn-danger mb-3">Sair</a>
                 <a href="loja.php" class="btn btn-primary mb-3">Ir para a Loja</a>
+        <div class="card shadow p-3">
+        <img src="https://logodownload.org/wp-content/uploads/2018/10/mega-sena-logo.png" alt="">
+            <div class="card-body text-center">
+                
                 
                 <p class="text-success">Escolha 6 números entre 1 e 60 e veja se você ganha!</p>
 
